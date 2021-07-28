@@ -1021,6 +1021,7 @@ class AUTOBertForSequenceClassification(BertPreTrainedModel):
             # soft_criterion = nn.KLDivLoss(reduction='none')
             teacher_probs = nn.functional.softmax(teacher_logits/self.temperature)
             student_log_probs = nn.functional.log_softmax(logits.view(-1, self.num_labels)/self.temperature)
+            teacher_probs = teacher_probs.float()
             loss = -student_log_probs * teacher_probs
 
             # loss = soft_criterion(student_probs, teacher_probs) 
