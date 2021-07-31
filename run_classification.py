@@ -80,6 +80,30 @@ MODEL_CLASSES = {
 
 }
 
+glue_tasks_inputs = {
+    "cola": ("sentence", None),
+    "mnli": ("premise", "hypothesis"),
+    "mrpc": ("sentence1", "sentence2"),
+    "qnli": ("question", "sentence"),
+    "qqp": ("question1", "question2"),
+    "rte": ("sentence1", "sentence2"),
+    "sst2": ("sentence", None),
+    "stsb": ("sentence1", "sentence2"),
+    "wnli": ("sentence1", "sentence2"),
+}
+
+
+glue_tasks_num_labels = {
+    "cola": 2,
+    "mnli": 3,
+    "mrpc": 2,
+    "sst2": 2,
+    "stsb": 1,
+    "qqp": 2,
+    "qnli": 2,
+    "rte": 2,
+    "wnli": 2,
+}
 
 def set_seed(args):
     random.seed(args.seed)
@@ -102,9 +126,10 @@ class Example(object):
         self.label = label
 
 class InputFeatures(object):
-    def __init__(self, input_ids, input_mask, label):
+    def __init__(self, input_ids, input_mask, input_token_type, label):
         self.input_ids = input_ids
         self.input_mask = input_mask
+        self.input_token_type = input_token_type
         self.label = label
 
 
@@ -144,9 +169,12 @@ def convert_examples_to_features(examples, tokenizer, max_seq_length, is_trainin
         padding = [0] * (max_seq_length - len(input_ids))
         input_ids += padding
         input_mask += padding
+        
+        input_token_type = [0] * max_seq_length
 
         assert len(input_ids) == max_seq_length
         assert len(input_mask) == max_seq_length
+        assert len(input_token_type) == max_seq_length
 
         label = example.label
 
@@ -154,14 +182,50 @@ def convert_examples_to_features(examples, tokenizer, max_seq_length, is_trainin
             InputFeatures(
                 input_ids = input_ids,
                 input_mask = input_mask,
+                input_token_type = input_token_type,
                 label = label,
             )
         )
 
     all_input_ids = torch.tensor([x.input_ids for x in features], dtype=torch.int)
     all_input_mask = torch.tensor([x.input_mask for x in features], dtype=torch.bool)
+    all_input_token_type = torch.tensor([x.input_token_type for x in features], dtype=torch.bool)
     all_label = torch.tensor([f.label for f in features], dtype=torch.int)
-    dataset = TensorDataset(all_input_ids, all_input_mask, all_label)
+    dataset = TensorDataset(all_input_ids, all_input_mask, all_input_token_type, all_label)
+
+    return dataset
+
+def convert_glue_examples_to_features(examples, tokenizer, task, max_seq_length, is_training):
+    """Loads a data file into a list of `InputBatch`s."""
+    print (len(examples))
+    sentence1_key, sentence2_key = glue_tasks_inputs[task]
+    features = []
+    for example_index, example in tqdm(enumerate(examples)):
+        args = (
+            (example[sentence1_key],) if sentence2_key is None else (
+                example[sentence1_key], example[sentence2_key])
+            )
+        inputs = tokenizer.encode_plus(*args, max_length=max_length, truncation=True, padding="max_length" if max_length else "do_not_pad")
+
+        assert len(input_ids) == max_seq_length
+        assert len(input_mask) == max_seq_length
+
+        label = example['label']
+
+        features.append(
+            InputFeatures(
+                input_ids = inputs['input_ids'],
+                input_mask = inputs['attention_mask'],
+                input_token_type = inputs['token_type_ids'],
+                label = label,
+            )
+        )
+
+    all_input_ids = torch.tensor([x.input_ids for x in features], dtype=torch.int)
+    all_input_mask = torch.tensor([x.input_mask for x in features], dtype=torch.bool)
+    all_input_token_type = torch.tensor([x.input_token_type for x in features], dtype=torch.bool)
+    all_label = torch.tensor([f.label for f in features], dtype=torch.int)
+    dataset = TensorDataset(all_input_ids, all_input_mask, all_input_token_type, all_label)
 
     return dataset
 
@@ -376,10 +440,16 @@ def load_and_cache_examples(args, tokenizer, prefix, evaluate=False):
         elif args.task_name=='20news':
             filename = os.path.join(args.data_dir, prefix+".jsonl")
             examples = read_jsonl_examples(filename)
+        elif args.task_name in glue_tasks_num_labels.keys():
+            data = load_dataset("glue", args.task_name)
+            examples = data['validation'] if prefix == 'dev' else data['train']
         else:
             assert(False)
-
-        dataset = convert_examples_to_features(examples=examples, tokenizer=tokenizer, max_seq_length=args.max_seq_length, is_training=True)
+        
+        if args.task_name in glue_tasks_num_labels.keys():
+            dataset = convert_glue_examples_to_features(examples=examples, tokenizer=tokenizer, task=args.task_name, max_seq_length=args.max_seq_length, is_training=True)
+        else:
+            dataset = convert_examples_to_features(examples=examples, tokenizer=tokenizer, max_seq_length=args.max_seq_length, is_training=True)
 
         if args.local_rank in [-1, 0]:
             logger.info("Saving features into cached file %s", cached_features_file)
