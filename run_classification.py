@@ -855,7 +855,7 @@ def train_both(args, train_dataset, model, tokenizer):
             }
 
             if args.train_teacher:
-                inputs['teacher_logits'] = batch[3]
+                inputs['teacher_logits'] = batch[4]
 
             outputs = model(**inputs)
             
