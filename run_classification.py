@@ -1021,6 +1021,7 @@ def evaluate(args, model, tokenizer, prefix="", evaluate_prefix='dev'):
             l = int(torch.max(L_s))
             batch[0] = batch[0][:, :l]
             batch[1] = batch[1][:, :l]
+            batch[2] = batch[2][:, :l]
 
             inputs = {
                 "input_ids": batch[0].long(),
@@ -1055,7 +1056,7 @@ def evaluate(args, model, tokenizer, prefix="", evaluate_prefix='dev'):
                     distilbert_flops +=   macs_list[l] * layer_num//2 + hidden_size * num_labels
 
             logits = to_list(outputs[0])
-            label_ids = to_list(batch[2])
+            label_ids = to_list(batch[3])
             
             tmp_eval_accuracy = accuracy(logits, label_ids)
             eval_accuracy += tmp_eval_accuracy
@@ -1198,7 +1199,7 @@ def evaluate_logits(args, model, tokenizer, prefix="", evaluate_prefix='train'):
             outputs = model(**inputs)
             
             logits = to_list(outputs[0])
-            label_ids = to_list(batch[2])
+            label_ids = to_list(batch[3])
             
             tmp_eval_accuracy = accuracy(logits, label_ids)
             eval_accuracy += tmp_eval_accuracy
