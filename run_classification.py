@@ -1618,6 +1618,8 @@ def main():
         num_labels = 20
     elif args.task_name=='yelp_f':
         num_labels = 5
+    if args.task_name in glue_tasks_num_labels.keys():
+        num_labels = glue_tasks_num_labels[args.task_name]
     else:
         num_labels = 2
 
