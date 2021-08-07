@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """BERT finetuning runner."""
-
+import inspect
 import argparse
 import glob
 import logging
@@ -208,6 +208,7 @@ def convert_glue_examples_to_features(examples, tokenizer, task, max_seq_length,
             )
         inputs = tokenizer.encode_plus(*args, max_length=max_seq_length, truncation=True, padding=True)
         print("***")
+        inspect.getargspec(func)
         print(max_seq_length)
         print(len(inputs['input_ids']))
         assert len(inputs['input_ids']) == max_seq_length
