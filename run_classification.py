@@ -208,8 +208,8 @@ def convert_glue_examples_to_features(examples, tokenizer, task, max_seq_length,
             )
         inputs = tokenizer.encode_plus(*args, max_length=max_seq_length, truncation=True, padding="max_length")
 
-        assert len(input_ids) == max_seq_length
-        assert len(input_mask) == max_seq_length
+        assert len(inputs['input_ids']) == max_seq_length
+        assert len(inputs['attention_mask']) == max_seq_length
 
         label = example['label']
 
