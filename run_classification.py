@@ -208,7 +208,7 @@ def convert_glue_examples_to_features(examples, tokenizer, task, max_seq_length,
             )
         inputs = tokenizer.encode_plus(*args, max_length=max_seq_length, truncation=True, padding=True)
         print("***")
-        inspect.getargspec(func)
+        inspect.getargspec(encode_plus)
         print(max_seq_length)
         print(len(inputs['input_ids']))
         assert len(inputs['input_ids']) == max_seq_length
