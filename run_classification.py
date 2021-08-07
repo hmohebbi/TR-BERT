@@ -206,11 +206,10 @@ def convert_glue_examples_to_features(examples, tokenizer, task, max_seq_length,
             (example[sentence1_key],) if sentence2_key is None else (
                 example[sentence1_key], example[sentence2_key])
             )
-        inputs = tokenizer.encode_plus(*args, max_length=max_seq_length, truncation=True, padding=True)
-        print("***")
-        print(inspect.getargspec(tokenizer.encode_plus))
-        print(max_seq_length)
-        print(len(inputs['input_ids']))
+        inputs = tokenizer.encode_plus(*args, max_length=max_seq_length, truncation_strategy=True, pad_to_max_length=True)
+#         print("***")
+#         print(max_seq_length)
+#         print(len(inputs['input_ids']))
         assert len(inputs['input_ids']) == max_seq_length
         assert len(inputs['attention_mask']) == max_seq_length
 
