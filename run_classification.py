@@ -427,7 +427,7 @@ def load_and_cache_examples(args, tokenizer, prefix, evaluate=False):
         features_and_dataset = torch.load(cached_features_file)
         dataset = features_and_dataset["dataset"]
 
-        all_input_ids, all_input_mask, all_label = dataset.tensors
+        all_input_ids, all_input_mask, all_input_token_type, all_label = dataset.tensors
 
     else:
         logger.info("Creating features from dataset file at %s", input_dir)
@@ -466,27 +466,27 @@ def load_and_cache_examples(args, tokenizer, prefix, evaluate=False):
             model_type = 'bert'
 
         if args.train_rl:
-            all_input_ids, all_input_mask, all_label = dataset.tensors
+            all_input_ids, all_input_mask, all_input_token_type, all_label = dataset.tensors
 
             tokens_prob = np.load(os.path.join("npy_folder", args.task_name + "_" + model_type + "_"+ str(args.max_seq_length)+ "_score.npy"))
             tokens_prob = torch.from_numpy(tokens_prob)
             print (tokens_prob.shape)
 
-            dataset = TensorDataset(all_input_ids, all_input_mask,  all_label, tokens_prob)
+            dataset = TensorDataset(all_input_ids, all_input_mask,  all_input_token_type, all_label, tokens_prob)
         elif args.train_init:
-            all_input_ids, all_input_mask, all_label = dataset.tensors
+            all_input_ids, all_input_mask, all_input_token_type, all_label = dataset.tensors
 
             tokens_prob = np.load(os.path.join("npy_folder", args.task_name + "_" + model_type + "_"+ str(args.max_seq_length)+ "_rank.npy"))
             tokens_prob = torch.from_numpy(tokens_prob)
 
-            dataset = TensorDataset(all_input_ids, all_input_mask, tokens_prob)
+            dataset = TensorDataset(all_input_ids, all_input_mask, all_input_token_type, tokens_prob)
         elif args.train_teacher:
-            all_input_ids, all_input_mask, all_label = dataset.tensors
+            all_input_ids, all_input_mask, all_input_token_type, all_label = dataset.tensors
 
             tokens_prob = np.load(os.path.join("npy_folder", args.task_name  + "_"+ str(args.max_seq_length)+ "_logits.npy"))
             tokens_prob = torch.from_numpy(tokens_prob)
 
-            dataset = TensorDataset(all_input_ids, all_input_mask, all_label, tokens_prob)
+            dataset = TensorDataset(all_input_ids, all_input_mask, all_input_token_type, all_label, tokens_prob)
 
     if args.local_rank == 0 and not evaluate:
         # Make sure only the first process in distributed training process the dataset, and the others will use the cache
