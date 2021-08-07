@@ -206,7 +206,7 @@ def convert_glue_examples_to_features(examples, tokenizer, task, max_seq_length,
             (example[sentence1_key],) if sentence2_key is None else (
                 example[sentence1_key], example[sentence2_key])
             )
-        inputs = tokenizer.encode_plus(*args, max_length=max_length, truncation=True, padding="max_length" if max_length else "do_not_pad")
+        inputs = tokenizer.encode_plus(*args, max_length=max_seq_length, truncation=True, padding="max_length")
 
         assert len(input_ids) == max_seq_length
         assert len(input_mask) == max_seq_length
