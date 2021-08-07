@@ -322,7 +322,8 @@ def train(args, train_dataset, model, tokenizer):
             inputs = {
                 "input_ids": batch[0].long(),
                 "attention_mask": batch[1].long(),
-                "labels": batch[2].long(),
+                "token_type_ids": batch[2].long(),
+                "labels": batch[3].long(),
             }
 
 
@@ -617,8 +618,9 @@ def train_rl(args, train_dataset, model, tokenizer):
             inputs = {
                 "input_ids": batch[0].long(),
                 "attention_mask": batch[1].long(),
-                "labels": batch[2].long(),
-                "tokens_prob": batch[3],
+                "token_type_ids": batch[2].long(),
+                "labels": batch[3].long(),
+                "tokens_prob": batch[4],
                 "copy_rate": copy_rate, 
             }
 
@@ -843,7 +845,8 @@ def train_both(args, train_dataset, model, tokenizer):
             inputs = {
                 "input_ids": batch[0].long(),
                 "attention_mask": batch[1].long(),
-                "labels": batch[2].long(),
+                "token_type_ids": batch[2].long(),
+                "labels": batch[3].long(),
                 "copy_rate": copy_rate, 
             }
 
@@ -1018,6 +1021,7 @@ def evaluate(args, model, tokenizer, prefix="", evaluate_prefix='dev'):
             inputs = {
                 "input_ids": batch[0].long(),
                 "attention_mask": batch[1].long(),
+                "token_type_ids": batch[2].long(),
             }
             
             outputs = model(**inputs)
@@ -1110,7 +1114,8 @@ def evaluate_grad(args, model, tokenizer, prefix="", evaluate_prefix='train'):
         inputs = {
             "input_ids": batch[0].long(),
             "attention_mask": batch[1].long(),
-            "labels": batch[2].long(),
+            "token_type_ids": batch[2].long(),
+            "labels": batch[3].long(),
  
         }
 
@@ -1183,6 +1188,7 @@ def evaluate_logits(args, model, tokenizer, prefix="", evaluate_prefix='train'):
             inputs = {
                 "input_ids": batch[0].long(),
                 "attention_mask": batch[1].long(),
+                "token_type_ids": batch[2].long(),
             }
             
             outputs = model(**inputs)
@@ -1309,6 +1315,7 @@ def train_init(args, train_dataset, model, tokenizer):
             inputs = {
                 "input_ids": batch[0].long(),
                 "attention_mask": batch[1].long(),
+                "token_type_ids": batch[2].long(),
                 "rank_prob": batch[-1]
             }
 
