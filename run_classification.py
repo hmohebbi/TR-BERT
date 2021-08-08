@@ -1090,7 +1090,7 @@ def evaluate(args, model, tokenizer, prefix="", evaluate_prefix='dev'):
         print ('DistilBERT FLOPS:', 2*distilbert_flops/len(dataset)/1000000.0)
     
     results = {}
-    for metric_name, metric_func in task_metrics[args.task_name].items()
+    for metric_name, metric_func in task_metrics[args.task_name].items():
         results[metric_name] = metric_func(flat_label_ids, flat_logits)
     results['FLOPS'] = 2*flops/len(dataset)/1000000.0
     print (results)
@@ -1236,7 +1236,7 @@ def evaluate_logits(args, model, tokenizer, prefix="", evaluate_prefix='train'):
 
     
     results = {}
-    for metric_name, metric_func in task_metrics[args.task_name].items()
+    for metric_name, metric_func in task_metrics[args.task_name].items():
         results[metric_name] = metric_func(flat_label_ids, flat_logits)
     print (results)
 
