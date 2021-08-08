@@ -112,10 +112,10 @@ glue_tasks_num_labels = {
 task_metrics = {
   "cola": {'matthews': matthews_corrcoef},
   "mnli": {'accuracy': accuracy_score},
-  "mrpc": {'f1': f1_score},
+  "mrpc": {'f1': f1_score, 'accuracy': accuracy_score},
   "sst2": {'accuracy': accuracy_score},
-  "stsb": {'pearson': pearsonr},
-  "qqp": {'f1': f1_score},
+  "stsb": {'pearson': pearsonr, 'spearman': spearmanr},
+  "qqp": {'f1': f1_score, 'accuracy': accuracy_score},
   "qnli": {'accuracy': accuracy_score},
   "rte": {'accuracy': accuracy_score},
   "wnli": {'accuracy': accuracy_score},
@@ -251,9 +251,9 @@ def convert_glue_examples_to_features(examples, tokenizer, task, max_seq_length,
 
     return dataset
 
-def accuracy(out, labels):
-    outputs = np.argmax(out, axis=1)
-    return np.sum(outputs == labels)
+# def accuracy(out, labels):
+#     outputs = np.argmax(out, axis=1)
+#     return np.sum(outputs == labels)
 
 def train(args, train_dataset, model, tokenizer):
     """ Train the model """
@@ -386,12 +386,12 @@ def train(args, train_dataset, model, tokenizer):
                     update = True
                     if args.evaluate_during_training:
                         results = evaluate(args, model, tokenizer)
-                        acc = results['acc']
+                        acc = results[list(task_metrics[args.task_name].keys())[0]]
                         for key, value in results.items():
                             tb_writer.add_scalar("eval_{}".format(key), value, global_step)
                         if acc > best_acc:
                             best_acc = acc
-                            print ('best acc:', acc)
+                            print ('best metric:', acc)
                         else:
                             update = False
                     if update:
@@ -724,7 +724,7 @@ def train_rl(args, train_dataset, model, tokenizer):
                 if args.local_rank == -1 and (args.save_steps > 0 and global_step % args.save_steps == 0):
                     if args.evaluate_during_training:
                         results = evaluate(args, model, tokenizer)
-                        acc = results['acc']
+                        acc = results[list(task_metrics[args.task_name].keys())[0]]
                         for key, value in results.items():
                             tb_writer.add_scalar("eval_{}".format(key), value, global_step)
 
@@ -956,12 +956,12 @@ def train_both(args, train_dataset, model, tokenizer):
                 if (args.local_rank == -1  and (args.save_steps > 0 and (global_step % args.save_steps == 0))):
                     if args.evaluate_during_training:
                         results = evaluate(args, model, tokenizer)
-                        acc = results['acc']
+                        acc = results[list(task_metrics[args.task_name].keys())[0]]
                         for key, value in results.items():
                             tb_writer.add_scalar("eval_{}".format(key), value, global_step)
                         print (acc)
                         if acc > best_acc:
-                            print ('Best acc:', acc)
+                            print ('Best metric:', acc)
                             best_acc = acc
                     output_dir = os.path.join(args.output_dir, "checkpoint-{}".format(global_step))
                     if not os.path.exists(output_dir):
@@ -1088,9 +1088,11 @@ def evaluate(args, model, tokenizer, prefix="", evaluate_prefix='dev'):
     if isbert:
         print ('BERT FLOPS:', 2*bert_flops/len(dataset)/1000000.0)
         print ('DistilBERT FLOPS:', 2*distilbert_flops/len(dataset)/1000000.0)
-
-    metric_name, metric_func = tuple(task_metrics[args.task_name].items())[0]
-    results = {metric_name: metric_func(flat_label_ids, flat_logits), 'FLOPS': 2*flops/len(dataset)/1000000.0}
+    
+    results = {}
+    for metric_name, metric_func in task_metrics[args.task_name].items()
+        results[metric_name] = metric_func(flat_label_ids, flat_logits)
+    results['FLOPS'] = 2*flops/len(dataset)/1000000.0
     print (results)
     return results
 
@@ -1233,8 +1235,9 @@ def evaluate_logits(args, model, tokenizer, prefix="", evaluate_prefix='train'):
     logger.info("  Evaluation done in total %f secs (%f sec per example)", evalTime, evalTime / (len(dataset)))
 
     
-    metric_name, metric_func = tuple(task_metrics[args.task_name].items())[0]
-    results = {metric_name: metric_func(flat_label_ids, flat_logits)}
+    results = {}
+    for metric_name, metric_func in task_metrics[args.task_name].items()
+        results[metric_name] = metric_func(flat_label_ids, flat_logits)
     print (results)
 
     all_logits = np.concatenate(all_logits, axis=0)
