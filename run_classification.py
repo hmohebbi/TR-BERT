@@ -221,7 +221,7 @@ def convert_glue_examples_to_features(examples, tokenizer, task, max_seq_length,
             (example[sentence1_key],) if sentence2_key is None else (
                 example[sentence1_key], example[sentence2_key])
             )
-        inputs = tokenizer.encode_plus(*args, max_length=max_seq_length, truncation_strategy=True, pad_to_max_length=True)
+        inputs = tokenizer.encode_plus(*args, max_length=max_seq_length, truncation_strategy=True if sentence2_key is None else "only_second", pad_to_max_length=True)
         
 #         print("***")
 #         print(max_seq_length)
