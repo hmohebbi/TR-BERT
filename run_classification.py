@@ -24,6 +24,9 @@ import timeit
 import json
 import shutil
 
+from scipy.stats import spearmanr, pearsonr
+from sklearn.metrics import matthews_corrcoef, f1_score, accuracy_score
+
 import numpy as np
 import torch
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
@@ -109,10 +112,10 @@ glue_tasks_num_labels = {
 task_metrics = {
   "cola": {'matthews': matthews_corrcoef},
   "mnli": {'accuracy': accuracy_score},
-  "mrpc": {'accuracy': accuracy_score, 'f1': f1_score},
+  "mrpc": {'f1': f1_score},
   "sst2": {'accuracy': accuracy_score},
-  "stsb": {'spearman': spearmanr, 'pearson': pearsonr},
-  "qqp": {'accuracy': accuracy_score, 'f1': f1_score},
+  "stsb": {'pearson': pearsonr},
+  "qqp": {'f1': f1_score},
   "qnli": {'accuracy': accuracy_score},
   "rte": {'accuracy': accuracy_score},
   "wnli": {'accuracy': accuracy_score},
@@ -1086,10 +1089,8 @@ def evaluate(args, model, tokenizer, prefix="", evaluate_prefix='dev'):
         print ('BERT FLOPS:', 2*bert_flops/len(dataset)/1000000.0)
         print ('DistilBERT FLOPS:', 2*distilbert_flops/len(dataset)/1000000.0)
 
-    results = []
-    metrics = task_metrics[args.task_name]
-    for metric_name, metric_func in self.metrics.items():
-        results.append({metric_name: metric_func(flat_label_ids, flat_logits), 'FLOPS': 2*flops/len(dataset)/1000000.0})
+    metric_name, metric_func = tuple(task_metrics[args.task_name].items())[0]
+    results = {metric_name: metric_func(flat_label_ids, flat_logits), 'FLOPS': 2*flops/len(dataset)/1000000.0}
     print (results)
     return results
 
@@ -1231,10 +1232,9 @@ def evaluate_logits(args, model, tokenizer, prefix="", evaluate_prefix='train'):
     evalTime = timeit.default_timer() - start_time
     logger.info("  Evaluation done in total %f secs (%f sec per example)", evalTime, evalTime / (len(dataset)))
 
-    results = []
-    metrics = task_metrics[args.task_name]
-    for metric_name, metric_func in self.metrics.items():
-        results.append({metric_name: metric_func(flat_label_ids, flat_logits)})
+    
+    metric_name, metric_func = tuple(task_metrics[args.task_name].items())[0]
+    results = {metric_name: metric_func(flat_label_ids, flat_logits)}
     print (results)
 
     all_logits = np.concatenate(all_logits, axis=0)
