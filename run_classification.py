@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """BERT finetuning runner."""
-import inspect
+
 import argparse
 import glob
 import logging
@@ -104,6 +104,18 @@ glue_tasks_num_labels = {
     "qnli": 2,
     "rte": 2,
     "wnli": 2,
+}
+
+task_metrics = {
+  "cola": {'matthews': matthews_corrcoef},
+  "mnli": {'accuracy': accuracy_score},
+  "mrpc": {'accuracy': accuracy_score, 'f1': f1_score},
+  "sst2": {'accuracy': accuracy_score},
+  "stsb": {'spearman': spearmanr, 'pearson': pearsonr},
+  "qqp": {'accuracy': accuracy_score, 'f1': f1_score},
+  "qnli": {'accuracy': accuracy_score},
+  "rte": {'accuracy': accuracy_score},
+  "wnli": {'accuracy': accuracy_score},
 }
 
 def set_seed(args):
@@ -996,7 +1008,8 @@ def evaluate(args, model, tokenizer, prefix="", evaluate_prefix='dev'):
     logger.info("  Num examples = %d", len(dataset))
     logger.info("  Batch size = %d", args.eval_batch_size)
 
-    eval_accuracy = eval_examples = 0
+    flat_logits = []
+    flat_label_ids = []
 
    
     macs_list = json.load(open('macs_list.json'))
@@ -1058,9 +1071,12 @@ def evaluate(args, model, tokenizer, prefix="", evaluate_prefix='dev'):
             logits = to_list(outputs[0])
             label_ids = to_list(batch[3])
             
-            tmp_eval_accuracy = accuracy(logits, label_ids)
-            eval_accuracy += tmp_eval_accuracy
-            eval_examples += len(logits)
+#             tmp_eval_accuracy = accuracy(logits, label_ids)
+#             eval_accuracy += tmp_eval_accuracy
+#             eval_examples += len(logits)
+            
+            flat_logits.extend(np.argmax(logits, axis=1))
+            flat_label_ids.extend(label_ids)
 
     evalTime = timeit.default_timer() - start_time
     logger.info("  Evaluation done in total %f secs (%f sec per example)", evalTime, evalTime / (len(dataset)))
@@ -1070,9 +1086,10 @@ def evaluate(args, model, tokenizer, prefix="", evaluate_prefix='dev'):
         print ('BERT FLOPS:', 2*bert_flops/len(dataset)/1000000.0)
         print ('DistilBERT FLOPS:', 2*distilbert_flops/len(dataset)/1000000.0)
 
-    eval_accuracy = eval_accuracy / eval_examples
-
-    results = {'acc': eval_accuracy, 'FLOPS': 2*flops/len(dataset)/1000000.0}
+    results = []
+    metrics = task_metrics[args.task_name]
+    for metric_name, metric_func in self.metrics.items():
+        results.append({metric_name: metric_func(flat_label_ids, flat_logits), 'FLOPS': 2*flops/len(dataset)/1000000.0})
     print (results)
     return results
 
@@ -1175,7 +1192,8 @@ def evaluate_logits(args, model, tokenizer, prefix="", evaluate_prefix='train'):
     logger.info("  Num examples = %d", len(dataset))
     logger.info("  Batch size = %d", args.eval_batch_size)
 
-    eval_accuracy = eval_examples = 0
+    flat_logits = []
+    flat_label_ids = []
    
     macs_list = json.load(open('macs_list.json'))
     flops = 0
@@ -1201,20 +1219,22 @@ def evaluate_logits(args, model, tokenizer, prefix="", evaluate_prefix='train'):
             logits = to_list(outputs[0])
             label_ids = to_list(batch[3])
             
-            tmp_eval_accuracy = accuracy(logits, label_ids)
-            eval_accuracy += tmp_eval_accuracy
-            eval_examples += len(logits)
+#             tmp_eval_accuracy = accuracy(logits, label_ids)
+#             eval_accuracy += tmp_eval_accuracy
+#             eval_examples += len(logits)
 
-
-            all_logits.append(logits)
+            all_logits.append(logits)        
+            flat_logits.extend(np.argmax(logits, axis=1))
+            flat_label_ids.extend(label_ids)
 
 
     evalTime = timeit.default_timer() - start_time
     logger.info("  Evaluation done in total %f secs (%f sec per example)", evalTime, evalTime / (len(dataset)))
 
-    eval_accuracy = eval_accuracy / eval_examples
-
-    results = {'acc': eval_accuracy}
+    results = []
+    metrics = task_metrics[args.task_name]
+    for metric_name, metric_func in self.metrics.items():
+        results.append({metric_name: metric_func(flat_label_ids, flat_logits)})
     print (results)
 
     all_logits = np.concatenate(all_logits, axis=0)
