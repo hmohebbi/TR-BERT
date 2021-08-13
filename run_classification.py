@@ -119,6 +119,7 @@ task_metrics = {
   "qnli": {'accuracy': accuracy_score},
   "rte": {'accuracy': accuracy_score},
   "wnli": {'accuracy': accuracy_score},
+  "ag_news": {'accuracy': accuracy_score},
 }
 
 def set_seed(args):
