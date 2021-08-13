@@ -251,6 +251,41 @@ def convert_glue_examples_to_features(examples, tokenizer, task, max_seq_length,
 
     return dataset
 
+def convert_clf_examples_to_features(examples, tokenizer, task, max_seq_length, is_training):
+    """Loads a data file into a list of `InputBatch`s."""
+    print (len(examples))
+    features = []
+    for example_index, example in tqdm(enumerate(examples)):
+        inputs = tokenizer.encode_plus(example["text"], max_length=max_seq_length, truncation_strategy=True, pad_to_max_length=True)
+        
+#         print("***")
+#         print(max_seq_length)
+#         print(len(inputs['input_ids']))
+#         print(len(inputs['token_type_ids']))
+        
+        assert len(inputs['input_ids']) == max_seq_length
+        assert len(inputs['attention_mask']) == max_seq_length
+        assert len(inputs['token_type_ids']) == max_seq_length
+
+        label = example['label']
+
+        features.append(
+            InputFeatures(
+                input_ids = inputs['input_ids'],
+                input_mask = inputs['attention_mask'],
+                input_token_type = inputs['token_type_ids'],
+                label = label,
+            )
+        )
+
+    all_input_ids = torch.tensor([x.input_ids for x in features], dtype=torch.int)
+    all_input_mask = torch.tensor([x.input_mask for x in features], dtype=torch.bool)
+    all_input_token_type = torch.tensor([x.input_token_type for x in features], dtype=torch.bool)
+    all_label = torch.tensor([f.label for f in features], dtype=torch.int)
+    dataset = TensorDataset(all_input_ids, all_input_mask, all_input_token_type, all_label)
+
+    return dataset
+
 # def accuracy(out, labels):
 #     outputs = np.argmax(out, axis=1)
 #     return np.sum(outputs == labels)
@@ -471,6 +506,8 @@ def load_and_cache_examples(args, tokenizer, prefix, evaluate=False):
         
         if args.task_name in glue_tasks_num_labels.keys():
             dataset = convert_glue_examples_to_features(examples=examples, tokenizer=tokenizer, task=args.task_name, max_seq_length=args.max_seq_length, is_training=True)
+        elif args.task_name=='ag_news':
+            dataset = convert_clf_examples_to_features(examples=examples, tokenizer=tokenizer, task=args.task_name, max_seq_length=args.max_seq_length, is_training=True)
         else:
             dataset = convert_examples_to_features(examples=examples, tokenizer=tokenizer, max_seq_length=args.max_seq_length, is_training=True)
 
