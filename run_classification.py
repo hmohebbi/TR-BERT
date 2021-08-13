@@ -256,7 +256,7 @@ def convert_clf_examples_to_features(examples, tokenizer, task, max_seq_length, 
     print (len(examples))
     features = []
     for example_index, example in tqdm(enumerate(examples)):
-        inputs = tokenizer.encode_plus(example["text"], max_length=max_seq_length, truncation_strategy=only_first, pad_to_max_length=True)
+        inputs = tokenizer.encode_plus(example["text"], max_length=max_seq_length, truncation_strategy="only_first", pad_to_max_length=True)
         
 #         print("***")
 #         print(max_seq_length)
