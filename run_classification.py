@@ -501,7 +501,7 @@ def load_and_cache_examples(args, tokenizer, prefix, evaluate=False):
         elif args.task_name in glue_tasks_num_labels.keys():
             data = load_dataset("glue", args.task_name)
             examples = data['validation'] if prefix == 'dev' else data['train']
-        elif atgs.task_name=='ag_news':
+        elif args.task_name=='ag_news':
             data = load_dataset(args.task_name)
             examples = data['test'] if prefix == 'test' else data['train']
         else:
